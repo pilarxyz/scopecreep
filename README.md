@@ -103,7 +103,7 @@ file: if you already have hooks in there, this goes alongside them.
 }
 ```
 
-The hook is 298 lines of Node with no dependencies. It runs on every file
+The hook is 341 lines of Node with no dependencies. It runs on every file
 write your agent makes, so read it before you trust it.
 
 ## How it works
@@ -166,6 +166,13 @@ carefully. If you know where the hook is, open an issue and point me at it.
 
 ## What this is not
 
+**It does not see writes made through the shell.** The hook fires on `Write`,
+`Edit`, `MultiEdit` and `NotebookEdit`. An agent that appends to a file with a
+shell redirect walks straight past it. I tested this rather than assumed it, and
+the ledger stays empty. Under default permissions Claude Code edits through the
+file tools, so ordinary sessions are covered, but you should know where the edge
+is.
+
 **It is not a sandbox.** `"block"` stops file writes outside your scope. It does
 nothing about an agent running `rm -rf` through a shell tool, and it never will.
 If you need real isolation, run in a container. That is a different problem with
@@ -200,6 +207,8 @@ annoying. The ledger exists because I got tired of that.
 
 Short on purpose.
 
+- Catch shell writes by diffing the working tree after a Bash call, rather than
+  trying to parse the command. Parsing shell is a losing game.
 - `block` mode should suggest a scope amendment instead of a flat rejection, so
   the agent has somewhere to go.
 - Per task branches, so each run lands somewhere throwaway.
@@ -213,7 +222,7 @@ Nothing here is scheduled. I work on it when it annoys me.
 node --test test/*.test.mjs
 ```
 
-74 tests, no dependencies, no build step.
+97 tests, no dependencies, no build step.
 
 ## Contributing
 
