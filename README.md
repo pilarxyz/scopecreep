@@ -13,7 +13,7 @@ is allowed to touch, and it tells you the second it touches anything else.
 Two lines to install. No wrapper command, no change to how you invoke anything.
 Your agent runs exactly the way it already runs today.
 
-![scopecreep catching an agent writing outside its scope, then undoing it](demo/scopecreep.gif)
+![scopecreep catching an agent writing outside its scope, then undoing it](https://raw.githubusercontent.com/pilarxyz/scopecreep/main/demo/scopecreep.gif)
 
 The agent in that recording is a stand-in that calls the hook exactly the way
 Claude Code does. The hook, everything it prints, and the undo are the real
@@ -142,6 +142,9 @@ npx scopecreep undo <task-id> --oos   # revert only what fell outside the scope
 Undo restores each file to the state it had before the task's *first* write to
 it, and deletes files the task created from nothing. Task ids match on prefix, so
 `undo 7f3a` is enough.
+
+`npx` fetches it on demand. If you reach for it often, `npm i -g scopecreep`
+saves the wait.
 
 The CLI is optional. The hook is the product. If you only want the warning and
 would rather handle the rest with git, that works and you can ignore this whole
