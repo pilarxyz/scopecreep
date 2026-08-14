@@ -39,10 +39,11 @@ function show(taskId) {
 function revert(taskId) {
   if (!taskId) return console.log(USAGE)
   const result = undo(root, taskId, { oosOnly: flags.has('--oos') })
-  const total = result.restored.length + result.removed.length
+  const total = result.restored.length + result.removed.length + result.skipped.length
   if (total === 0) return console.log(`nothing to undo for "${taskId}".`)
   for (const rel of result.restored) console.log(`  restored  ${rel}`)
   for (const rel of result.removed) console.log(`  removed   ${rel}`)
+  for (const rel of result.skipped) console.log(`  skipped   ${rel}   no copy of the original`)
 }
 
 const commands = { log, show: () => show(args[0]), undo: () => revert(args[0]) }

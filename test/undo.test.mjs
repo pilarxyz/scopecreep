@@ -62,5 +62,5 @@ test('undo on an unknown task changes nothing and says so', () => {
   const { dir, abs } = repoWithWrite('src/a.ts', 'before', 'after', true)
   const result = undo(dir, 'nosuchtask')
   assert.equal(fs.readFileSync(abs, 'utf8'), 'after')
-  assert.deepEqual(result, { restored: [], removed: [] })
+  assert.deepEqual(result, { restored: [], removed: [], skipped: [] })
 })

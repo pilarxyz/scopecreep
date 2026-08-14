@@ -64,7 +64,9 @@ $ scopecreep show 7f3a
 
 ## Install
 
-Inside Claude Code:
+Two ways in. Pick whichever suits the repo.
+
+### As a Claude Code plugin
 
 ```
 /plugin marketplace add pilarxyz/scopecreep
@@ -74,8 +76,34 @@ Inside Claude Code:
 The plugin carries its own hook, so nothing in your `settings.json` is touched.
 If you already have hooks configured, they keep working.
 
-Then tell it what the agent is allowed to touch. Create `scopecreep.json` in your
-repo root:
+### From npm
+
+```bash
+npm i -D scopecreep
+```
+
+Then add this entry to the `PreToolUse` list in `.claude/settings.json`. Add it.
+Do not replace the file: if you already have hooks in there, this goes alongside
+them.
+
+```json
+{
+  "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "node \"${CLAUDE_PROJECT_DIR}/node_modules/scopecreep/plugins/scopecreep/scopecreep.mjs\""
+    }
+  ]
+}
+```
+
+This route also gets you the CLI, so `npx scopecreep log` works with nothing
+further to download.
+
+### Either way, declare a scope
+
+Create `scopecreep.json` at your repo root:
 
 ```json
 {
@@ -86,25 +114,10 @@ repo root:
 ```
 
 An empty `scope` means everything is in scope, so a fresh install stays quiet
-until you actually declare something. Node 20 or newer.
+until you actually declare something.
 
-### Without the plugin system
-
-Copy `plugins/scopecreep/scopecreep.mjs` into your repo, then add this entry to
-the `PreToolUse` list in your `.claude/settings.json`. Add it. Do not replace the
-file: if you already have hooks in there, this goes alongside them.
-
-```json
-{
-  "matcher": "Write|Edit|MultiEdit|NotebookEdit",
-  "hooks": [
-    { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/scopecreep.mjs\"" }
-  ]
-}
-```
-
-The hook is 341 lines of Node with no dependencies. It runs on every file
-write your agent makes, so read it before you trust it.
+Node 20 or newer. The hook is 381 lines with no dependencies, and it runs on
+every file write your agent makes, so read it before you trust it.
 
 ## How it works
 
@@ -142,6 +155,11 @@ npx scopecreep undo <task-id> --oos   # revert only what fell outside the scope
 Undo restores each file to the state it had before the task's *first* write to
 it, and deletes files the task created from nothing. Task ids match on prefix, so
 `undo 7f3a` is enough.
+
+Files over 5 MB are logged but not copied, because a handful of edits to a large
+asset otherwise turns `.scopecreep/` into hundreds of megabytes. Those show up as
+`skipped` when you undo, rather than being deleted. Raise or lower the line with
+`"maxSnapshotBytes"` in your config.
 
 `npx` fetches it on demand. If you reach for it often, `npm i -g scopecreep`
 saves the wait.
@@ -201,6 +219,9 @@ annoying. The ledger exists because I got tired of that.
 - The ledger has no size limit yet. A long session on a big repo will grow it.
 - Snapshots are content addressed and never garbage collected. Delete
   `.scopecreep/` when it bothers you.
+- Anything undo has no copy of is left alone rather than removed. That is
+  deliberate. Deleting a file you cannot put back is the one mistake this tool
+  must never make.
 - `undo` restores file contents. It does not touch git state, so if you have
   already committed, undo will show up as a new working tree change.
 
@@ -223,7 +244,7 @@ Nothing here is scheduled. I work on it when it annoys me.
 node --test test/*.test.mjs
 ```
 
-97 tests, no dependencies, no build step.
+108 tests, no dependencies, no build step.
 
 ## Contributing
 

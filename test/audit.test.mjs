@@ -85,6 +85,6 @@ test('an empty task id does not undo every task at once', () => {
   fs.writeFileSync(f, 'before')
   recordWrite(root, { task: 't1', rel: 'a.ts', inScope: true, snapshot: snapshotFile(root, f) })
   fs.writeFileSync(f, 'after')
-  assert.deepEqual(undo(root, ''), { restored: [], removed: [] })
+  assert.deepEqual(undo(root, ''), { restored: [], removed: [], skipped: [] })
   assert.equal(fs.readFileSync(f, 'utf8'), 'after')
 })

@@ -11,6 +11,9 @@ export const DEFAULTS = {
   scope: [],
   protected: ['package.json', 'package-lock.json', '.env*', 'migrations/**', '.github/**'],
   mode: 'warn',
+  // Every write copies the previous contents into .scopecreep. Without a cap,
+  // a few edits to a large asset quietly turn into hundreds of megabytes.
+  maxSnapshotBytes: 5 * 1024 * 1024,
 }
 
 const STORE = '.scopecreep'
@@ -84,15 +87,26 @@ export function toRelative(filePath, projectRoot) {
   return p
 }
 
+// toRelative hands back an absolute path when the write landed outside the
+// project, so this is how the rest of the code tells the two apart.
+function isOutsideProject(rel) {
+  return /^(\/|[a-zA-Z]:\/)/.test(rel)
+}
+
 function absoluteTarget(root, rel) {
-  return /^(\/|[a-zA-Z]:\/)/.test(rel) ? rel : path.join(root, rel)
+  return isOutsideProject(rel) ? rel : path.join(root, rel)
 }
 
 export function classify(filePath, config, projectRoot) {
   const rel = toRelative(filePath, projectRoot)
   const scope = config.scope || []
+  // Matching strips the leading slash, so /app/x.ts would otherwise satisfy a
+  // scope of app/** even though it sits outside the project entirely. In a
+  // container that is not a hypothetical: /app is where everyone puts things.
+  const inScope =
+    scope.length === 0 ? true : isOutsideProject(rel) ? false : matchesAny(rel, scope)
   return {
-    inScope: scope.length === 0 ? true : matchesAny(rel, scope),
+    inScope,
     protected: matchesAny(rel, config.protected || []),
   }
 }
@@ -167,16 +181,34 @@ export function loadConfig(root) {
     scope: Array.isArray(user.scope) ? user.scope : DEFAULTS.scope,
     protected: Array.isArray(user.protected) ? user.protected : DEFAULTS.protected,
     mode: user.mode === 'block' ? 'block' : DEFAULTS.mode,
+    maxSnapshotBytes:
+      Number.isFinite(user.maxSnapshotBytes) && user.maxSnapshotBytes > 0
+        ? user.maxSnapshotBytes
+        : DEFAULTS.maxSnapshotBytes,
     root,
   }
 }
 
-export function snapshotFile(root, absPath) {
+// existed and hash mean different things and undo depends on the difference.
+// existed:false is the only case where the write created the file from nothing,
+// and therefore the only case undo is allowed to delete. Everything else, a file
+// too big to copy, one we lacked permission to read, gets existed:true with no
+// hash: we know it was there, we just cannot put it back.
+export function snapshotFile(root, absPath, limit = DEFAULTS.maxSnapshotBytes) {
+  let stat
+  try {
+    stat = fs.statSync(absPath)
+  } catch {
+    return { existed: false, hash: null }
+  }
+  if (!stat.isFile()) return { existed: true, hash: null, skipped: 'not a regular file' }
+  if (stat.size > limit) return { existed: true, hash: null, skipped: 'too large' }
+
   let content
   try {
     content = fs.readFileSync(absPath)
   } catch {
-    return { existed: false, hash: null }
+    return { existed: true, hash: null, skipped: 'unreadable' }
   }
   const hash = crypto.createHash('sha256').update(content).digest('hex')
   const dir = path.join(root, STORE, 'snapshots')
@@ -216,7 +248,7 @@ export function undo(root, taskPrefix, options = {}) {
   // An empty prefix matches every task. Undoing everything by accident is a
   // worse outcome than doing nothing.
   const prefix = String(taskPrefix ?? '').trim()
-  if (!prefix) return { restored: [], removed: [] }
+  if (!prefix) return { restored: [], removed: [], skipped: [] }
   const entries = readLedger(root).filter((e) => String(e.task || '').startsWith(prefix))
   const wanted = options.oosOnly ? entries.filter((e) => !e.inScope) : entries
 
@@ -228,25 +260,33 @@ export function undo(root, taskPrefix, options = {}) {
 
   const restored = []
   const removed = []
+  const skipped = []
   for (const [rel, entry] of first) {
     const abs = absoluteTarget(root, rel)
     const snap = entry.snapshot || {}
-    if (snap.existed && snap.hash) {
-      const blob = path.join(root, STORE, 'snapshots', snap.hash)
-      if (!fs.existsSync(blob)) continue
-      fs.mkdirSync(path.dirname(abs), { recursive: true })
-      fs.copyFileSync(blob, abs)
-      restored.push(rel)
-    } else {
+
+    if (!snap.existed) {
       try {
         fs.unlinkSync(abs)
         removed.push(rel)
       } catch {
         // already gone, nothing to undo
       }
+      continue
     }
+
+    const blob = snap.hash && path.join(root, STORE, 'snapshots', snap.hash)
+    if (!blob || !fs.existsSync(blob)) {
+      // The file was there before the write and we have no copy of it. Deleting
+      // it would destroy the very thing undo exists to protect.
+      skipped.push(rel)
+      continue
+    }
+    fs.mkdirSync(path.dirname(abs), { recursive: true })
+    fs.copyFileSync(blob, abs)
+    restored.push(rel)
   }
-  return { restored, removed }
+  return { restored, removed, skipped }
 }
 
 const OPENCODE_TOOLS = { write: 'Write', edit: 'Edit', patch: 'Edit' }
@@ -309,7 +349,7 @@ export function main() {
         rel: toRelative(filePath, root),
         inScope: verdict.inScope,
         protected: verdict.protected,
-        snapshot: snapshotFile(root, filePath),
+        snapshot: snapshotFile(root, filePath, config.maxSnapshotBytes),
       })
     } catch {
       // nothing to do about it here, and nothing worth breaking the session for
