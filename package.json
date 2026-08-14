@@ -1,6 +1,6 @@
 {
   "name": "scopecreep",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tells you when your coding agent writes outside the scope you gave it.",
   "type": "module",
   "bin": {

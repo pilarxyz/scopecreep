@@ -1,8 +1,10 @@
 {
   "name": "scopecreep",
   "description": "Warns you the moment the agent writes outside the scope you declared, and keeps a per-task undo.",
-  "version": "0.1.0",
-  "author": { "name": "pilarxyz" },
+  "version": "0.1.1",
+  "author": {
+    "name": "pilarxyz"
+  },
   "homepage": "https://github.com/pilarxyz/scopecreep",
   "repository": "https://github.com/pilarxyz/scopecreep",
   "license": "MIT"
