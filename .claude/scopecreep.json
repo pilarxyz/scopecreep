@@ -1,0 +1,11 @@
+{
+  "scope": [],
+  "protected": [
+    "package.json",
+    "package-lock.json",
+    ".env*",
+    "migrations/**",
+    ".github/**"
+  ],
+  "mode": "warn"
+}
