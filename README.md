@@ -10,12 +10,19 @@ through a diff you no longer recognise.
 `scopecreep` is a hook. You drop it into your repo, tell it which paths the agent
 is allowed to touch, and it tells you the second it touches anything else.
 
-No install step. No wrapper command. Your agent runs exactly the way it already
-runs today.
+Two lines to install. No wrapper command, no change to how you invoke anything.
+Your agent runs exactly the way it already runs today.
+
+![scopecreep catching an agent writing outside its scope, then undoing it](demo/scopecreep.gif)
+
+The agent in that recording is a stand-in that calls the hook exactly the way
+Claude Code does. The hook, everything it prints, and the undo are the real
+thing. You can rerun it yourself with `vhs demo/demo.tape`.
 
 ## What it looks like
 
-Your agent edits a file outside the scope you declared:
+In text, for anyone who would rather read it. Your agent edits a file outside
+the scope you declared:
 
 ```
 scopecreep  ·  out of scope
