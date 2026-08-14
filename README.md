@@ -198,8 +198,6 @@ annoying. The ledger exists because I got tired of that.
 - The ledger has no size limit yet. A long session on a big repo will grow it.
 - Snapshots are content addressed and never garbage collected. Delete
   `.scopecreep/` when it bothers you.
-- Path matching is tested on macOS and Linux. Windows separators are normalised
-  but I do not test on Windows.
 - `undo` restores file contents. It does not touch git state, so if you have
   already committed, undo will show up as a new working tree change.
 

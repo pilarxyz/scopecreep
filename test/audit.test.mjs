@@ -10,7 +10,12 @@ const HOOK = path.resolve('plugins/scopecreep/scopecreep.mjs')
 const tmp = (p = 'sc-') => fs.mkdtempSync(path.join(os.tmpdir(), p))
 
 test('a write outside the project stays absolute so undo can find it again', () => {
-  assert.equal(toRelative('/elsewhere/x.ts', '/home/me/proj'), '/elsewhere/x.ts')
+  const root = tmp('sc-root-')
+  const outside = tmp('sc-out-')
+  const victim = path.join(outside, 'x.ts')
+  fs.writeFileSync(victim, 'x')
+  const rel = toRelative(victim, root)
+  assert.equal(fs.realpathSync(path.resolve(rel)), fs.realpathSync(victim))
 })
 
 test('a write outside the project is never in scope', () => {

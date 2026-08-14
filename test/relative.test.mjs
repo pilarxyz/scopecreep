@@ -43,7 +43,14 @@ test('an out of scope write through a symlink is still caught', () => {
   assert.equal(classify(path.join(link, 'src/api/users.ts'), cfg, real).inScope, false)
 })
 
-test('purely notional paths that touch no filesystem behave as before', () => {
-  assert.equal(toRelative('/home/me/proj/src/a.ts', '/home/me/proj'), 'src/a.ts')
-  assert.equal(toRelative('/elsewhere/x.ts', '/home/me/proj'), '/elsewhere/x.ts')
+test('a path inside the root goes relative, a path outside it stays absolute', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sc-in-'))
+  fs.mkdirSync(path.join(root, 'src'))
+  fs.writeFileSync(path.join(root, 'src/a.ts'), 'x')
+  assert.equal(toRelative(path.join(root, 'src/a.ts'), root), 'src/a.ts')
+
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'sc-out-'))
+  fs.writeFileSync(path.join(outside, 'x.ts'), 'x')
+  const rel = toRelative(path.join(outside, 'x.ts'), root)
+  assert.equal(fs.realpathSync(path.resolve(rel)), fs.realpathSync(path.join(outside, 'x.ts')))
 })

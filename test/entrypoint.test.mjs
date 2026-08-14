@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
+import { pathToFileURL } from 'node:url'
 
 const SOURCE = path.resolve('plugins/scopecreep/scopecreep.mjs')
 
@@ -47,6 +48,6 @@ test('the hook runs when its path contains a space', () => {
 })
 
 test('the hook stays importable without executing its main routine', async () => {
-  const mod = await import(`${SOURCE}?fresh=${process.pid}`)
+  const mod = await import(`${pathToFileURL(SOURCE).href}?fresh=${process.pid}`)
   assert.equal(typeof mod.decide, 'function')
 })
