@@ -1,5 +1,5 @@
 // scopecreep for opencode. Same core as the Claude Code hook, different adapter.
-// Drop this file in .opencode/plugins/ alongside a .claude/scopecreep.mjs.
+// Drop this file in .opencode/plugins/ alongside plugins/scopecreep/scopecreep.mjs.
 import {
   loadConfig,
   classify,
@@ -8,7 +8,7 @@ import {
   recordWrite,
   snapshotFile,
   toRelative,
-} from '../../.claude/scopecreep.mjs'
+} from '../../plugins/scopecreep/scopecreep.mjs'
 
 export const ScopeCreep = async ({ directory }) => {
   const root = directory || process.cwd()

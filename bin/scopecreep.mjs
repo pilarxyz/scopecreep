@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readLedger, summarize, undo } from '../.claude/scopecreep.mjs'
+import { readLedger, summarize, undo } from '../plugins/scopecreep/scopecreep.mjs'
 
 const USAGE = `usage: scopecreep <command>
 

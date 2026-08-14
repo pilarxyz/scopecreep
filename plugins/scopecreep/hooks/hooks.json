@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/scopecreep.mjs\"",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scopecreep.mjs\"",
             "timeout": 10,
             "statusMessage": "checking scope"
           }

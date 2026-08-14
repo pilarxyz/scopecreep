@@ -5,7 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 
-const SOURCE = path.resolve('.claude/scopecreep.mjs')
+const SOURCE = path.resolve('plugins/scopecreep/scopecreep.mjs')
 
 function repoAt(dir) {
   fs.mkdirSync(path.join(dir, '.claude'), { recursive: true })

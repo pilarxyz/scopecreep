@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { classify } from '../.claude/scopecreep.mjs'
+import { classify } from '../plugins/scopecreep/scopecreep.mjs'
 
 const cfg = { scope: ['src/auth/**'], protected: ['package.json', '.env*'] }
 

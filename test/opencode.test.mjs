@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { fromOpencode, decide } from '../.claude/scopecreep.mjs'
+import { fromOpencode, decide } from '../plugins/scopecreep/scopecreep.mjs'
 
 const root = '/home/me/proj'
 const cfg = { scope: ['src/auth/**'], protected: ['package.json'], mode: 'warn' }

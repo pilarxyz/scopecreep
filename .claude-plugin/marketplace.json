@@ -1,0 +1,14 @@
+{
+  "name": "scopecreep",
+  "owner": {
+    "name": "pilarxyz"
+  },
+  "description": "Guardrails for coding agents. One plugin so far: scopecreep.",
+  "plugins": [
+    {
+      "name": "scopecreep",
+      "source": "./plugins/scopecreep",
+      "description": "Warns you the moment the agent writes outside the scope you declared, and keeps a per-task undo."
+    }
+  ]
+}

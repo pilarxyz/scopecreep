@@ -4,8 +4,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { summarize } from '../.claude/scopecreep.mjs'
-import { recordWrite, snapshotFile } from '../.claude/scopecreep.mjs'
+import { summarize } from '../plugins/scopecreep/scopecreep.mjs'
+import { recordWrite, snapshotFile } from '../plugins/scopecreep/scopecreep.mjs'
 
 const CLI = path.resolve('bin/scopecreep.mjs')
 

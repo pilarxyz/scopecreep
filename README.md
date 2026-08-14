@@ -57,19 +57,18 @@ $ scopecreep show 7f3a
 
 ## Install
 
-Copy the `.claude/` folder into your repo. Three files: the hook, its config, and
-a `settings.json` that wires the hook to `Write`, `Edit`, `MultiEdit` and
-`NotebookEdit`.
+Inside Claude Code:
 
-```bash
-npx degit pilarxyz/scopecreep/.claude .claude
+```
+/plugin marketplace add pilarxyz/scopecreep
+/plugin install scopecreep@scopecreep
 ```
 
-Or clone and copy it by hand. The hook is 290 lines of Node with no
-dependencies, so read it before you run it. It executes on every file write your
-agent makes, and you should not take my word for what it does.
+The plugin carries its own hook, so nothing in your `settings.json` is touched.
+If you already have hooks configured, they keep working.
 
-Then set your scope in `.claude/scopecreep.json`:
+Then tell it what the agent is allowed to touch. Create `scopecreep.json` in your
+repo root:
 
 ```json
 {
@@ -79,8 +78,26 @@ Then set your scope in `.claude/scopecreep.json`:
 }
 ```
 
-An empty `scope` means everything is in scope, so a fresh copy stays quiet until
-you actually declare something. Node 20 or newer.
+An empty `scope` means everything is in scope, so a fresh install stays quiet
+until you actually declare something. Node 20 or newer.
+
+### Without the plugin system
+
+Copy `plugins/scopecreep/scopecreep.mjs` into your repo, then add this entry to
+the `PreToolUse` list in your `.claude/settings.json`. Add it. Do not replace the
+file: if you already have hooks in there, this goes alongside them.
+
+```json
+{
+  "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+  "hooks": [
+    { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/scopecreep.mjs\"" }
+  ]
+}
+```
+
+The hook is 298 lines of Node with no dependencies. It runs on every file
+write your agent makes, so read it before you trust it.
 
 ## How it works
 
@@ -99,6 +116,9 @@ Path matching follows gitignore habits closely enough to not surprise you.
 `src/auth/**` matches anything below `src/auth`. A pattern with no slash, like
 `package.json`, matches that basename at any depth. A pattern with a slash is
 anchored to the repo root.
+
+Config is read from `scopecreep.json` at your repo root, falling back to
+`.claude/scopecreep.json` if you had it there from an earlier version.
 
 The ledger is plain JSONL, one line per write. It never leaves your machine and
 there is no telemetry in here.
@@ -186,7 +206,7 @@ Nothing here is scheduled. I work on it when it annoys me.
 node --test test/*.test.mjs
 ```
 
-65 tests, no dependencies, no build step.
+74 tests, no dependencies, no build step.
 
 ## Contributing
 

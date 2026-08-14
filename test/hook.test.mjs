@@ -4,9 +4,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { readLedger } from '../.claude/scopecreep.mjs'
+import { readLedger } from '../plugins/scopecreep/scopecreep.mjs'
 
-const HOOK = path.resolve('.claude/scopecreep.mjs')
+const HOOK = path.resolve('plugins/scopecreep/scopecreep.mjs')
 
 function repo(config) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sc-'))

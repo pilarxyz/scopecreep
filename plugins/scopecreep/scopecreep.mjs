@@ -116,15 +116,23 @@ export function decide(event, config) {
   return { systemMessage: formatWarning(rel, verdict, config) }
 }
 
-export function loadConfig(root) {
-  const file = path.join(root, '.claude', 'scopecreep.json')
-  let user = {}
+function readConfigFile(file) {
   try {
-    user = JSON.parse(fs.readFileSync(file, 'utf8'))
-    if (user === null || typeof user !== 'object' || Array.isArray(user)) user = {}
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'))
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return parsed
   } catch {
-    user = {}
+    return null
   }
+}
+
+// Root first so a plugin install works in a repo with no .claude directory,
+// then the old location so anyone who copied the files by hand keeps working.
+export function loadConfig(root) {
+  const user =
+    readConfigFile(path.join(root, 'scopecreep.json')) ||
+    readConfigFile(path.join(root, '.claude', 'scopecreep.json')) ||
+    {}
   return {
     scope: Array.isArray(user.scope) ? user.scope : DEFAULTS.scope,
     protected: Array.isArray(user.protected) ? user.protected : DEFAULTS.protected,

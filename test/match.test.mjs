@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { matchesAny } from '../.claude/scopecreep.mjs'
+import { matchesAny } from '../plugins/scopecreep/scopecreep.mjs'
 
 test('a trailing ** matches files nested at any depth below it', () => {
   assert.equal(matchesAny('src/auth/login.ts', ['src/auth/**']), true)

@@ -7,7 +7,7 @@
     "scopecreep": "bin/scopecreep.mjs"
   },
   "files": [
-    ".claude",
+    "plugins",
     "bin"
   ],
   "scripts": {
