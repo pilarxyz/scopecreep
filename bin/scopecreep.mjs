@@ -32,7 +32,7 @@ function show(taskId) {
     const rows = entries.filter((e) => e.inScope === group)
     if (rows.length === 0) continue
     console.log(group ? '\n  in scope' : '\n  out of scope')
-    for (const r of rows) console.log(`    ${r.rel}${r.protected ? '   (protected)' : ''}`)
+    for (const r of rows.filter((r) => r.rel)) console.log(`    ${r.rel}${r.protected ? "   (protected)" : ""}`)
   }
 }
 

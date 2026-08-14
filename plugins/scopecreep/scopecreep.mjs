@@ -50,12 +50,42 @@ export function matchesAny(relPath, patterns) {
   })
 }
 
+// Resolve symlinks as far down as the path actually exists, then re-attach the
+// rest. The project root and the written path can arrive expressed differently:
+// on macOS Claude Code reports cwd as /private/var/... while the tool reports
+// the file as /var/..., and /var is a symlink to /private/var. Comparing the
+// raw strings makes every write look out of scope.
+function resolveAsFarAsItExists(p, base) {
+  // base, not process.cwd(): the hook runs from wherever the agent happens to
+  // be, which is not necessarily the project it is editing.
+  const abs = path.isAbsolute(p) ? path.normalize(p) : path.resolve(base || process.cwd(), p)
+  let head = abs
+  const tail = []
+  for (;;) {
+    try {
+      return path.join(fs.realpathSync(head), ...tail)
+    } catch {
+      const parent = path.dirname(head)
+      if (parent === head) return abs
+      tail.unshift(path.basename(head))
+      head = parent
+    }
+  }
+}
+
 export function toRelative(filePath, projectRoot) {
-  const p = normalize(filePath)
-  if (!projectRoot) return p
-  const root = normalize(projectRoot).replace(/\/+$/, '')
+  if (!projectRoot) return normalize(filePath)
+  const p = resolveAsFarAsItExists(filePath, projectRoot).replace(/\\/g, '/')
+  const root = resolveAsFarAsItExists(projectRoot).replace(/\\/g, '/').replace(/\/+$/, '')
   if (p === root) return ''
-  return p.startsWith(root + '/') ? p.slice(root.length + 1) : p
+  if (p.startsWith(root + '/')) return p.slice(root.length + 1)
+  // Outside the project entirely, the ~/.zshrc case. Keep it absolute, or undo
+  // would rebuild the path under the repo root and leave a stray file there.
+  return p
+}
+
+function absoluteTarget(root, rel) {
+  return /^(\/|[a-zA-Z]:\/)/.test(rel) ? rel : path.join(root, rel)
 }
 
 export function classify(filePath, config, projectRoot) {
@@ -183,16 +213,23 @@ export function readLedger(root) {
 }
 
 export function undo(root, taskPrefix, options = {}) {
-  const entries = readLedger(root).filter((e) => String(e.task || '').startsWith(taskPrefix))
+  // An empty prefix matches every task. Undoing everything by accident is a
+  // worse outcome than doing nothing.
+  const prefix = String(taskPrefix ?? '').trim()
+  if (!prefix) return { restored: [], removed: [] }
+  const entries = readLedger(root).filter((e) => String(e.task || '').startsWith(prefix))
   const wanted = options.oosOnly ? entries.filter((e) => !e.inScope) : entries
 
   const first = new Map()
-  for (const e of wanted) if (!first.has(e.rel)) first.set(e.rel, e)
+  for (const e of wanted) {
+    if (!e.rel || typeof e.rel !== 'string') continue
+    if (!first.has(e.rel)) first.set(e.rel, e)
+  }
 
   const restored = []
   const removed = []
   for (const [rel, entry] of first) {
-    const abs = path.join(root, rel)
+    const abs = absoluteTarget(root, rel)
     const snap = entry.snapshot || {}
     if (snap.existed && snap.hash) {
       const blob = path.join(root, STORE, 'snapshots', snap.hash)
@@ -263,14 +300,20 @@ export function main() {
   const blocked = output?.hookSpecificOutput?.permissionDecision === 'deny'
 
   if (!blocked) {
-    recordWrite(root, {
-      task: event.session_id || 'unknown',
-      tool: event.tool_name,
-      rel: toRelative(filePath, root),
-      inScope: verdict.inScope,
-      protected: verdict.protected,
-      snapshot: snapshotFile(root, filePath),
-    })
+    // The ledger is a nice-to-have. The warning is the whole point, so a
+    // read-only checkout or a wedged .scopecreep directory must not silence it.
+    try {
+      recordWrite(root, {
+        task: event.session_id || 'unknown',
+        tool: event.tool_name,
+        rel: toRelative(filePath, root),
+        inScope: verdict.inScope,
+        protected: verdict.protected,
+        snapshot: snapshotFile(root, filePath),
+      })
+    } catch {
+      // nothing to do about it here, and nothing worth breaking the session for
+    }
   }
 
   if (output) process.stdout.write(JSON.stringify(output))
